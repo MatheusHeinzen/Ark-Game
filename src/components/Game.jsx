@@ -7,7 +7,6 @@ import { Player } from '../core/Player';
 let orbe;
 let platforms = [];
 let player;
-let assetsLoaded = false;
 
 
 export default function Game({ onGameEnd }) {
@@ -15,15 +14,15 @@ export default function Game({ onGameEnd }) {
 
   useEffect(() => {
     const sketch = (p) => {
+
       p.setup = () => {
         p.createCanvas(800, 600);
-        orbe = new Orbe(p.width / 2,  p.height / 2 -200, 40, p);
-        orbe.preload();
-        player = new Player(p, 100, 500);
         
-        if (assetsLoaded) {
-          orbe.setupObstacles();
-        }
+        orbe = new Orbe(p.width / 2, p.height / 2 - 200, 40, p);
+        orbe.preload();
+        orbe.setupObstacles();
+
+        player = new Player(p, 100, 500);     
 
         platforms = [
           new Platform(300, 400, 100, 20, 'normal', p),
@@ -36,21 +35,25 @@ export default function Game({ onGameEnd }) {
       p.draw = () => {
         p.background(20);
 
-       
         orbe.update();
         orbe.draw();
 
         platforms.forEach((platform) => {
           platform.update();
           platform.draw();
-
-          
         });
 
 
         player.update(platforms);
         player.draw();
 
+        if (p.keyIsDown(p.LEFT_ARROW)) {
+          player.moveLeft();
+        }
+        if (p.keyIsDown(p.RIGHT_ARROW)) {
+          player.moveRight();
+        }
+        
         // Verifica se o jogador alcançou a orbe
         if (player?.pos && orbe) {
           if (player.pos.dist(orbe.getPosition()) < orbe.radius) {
@@ -60,14 +63,16 @@ export default function Game({ onGameEnd }) {
       };
 
       p.keyPressed = () => {
-        if (p.keyCode === p.UP_ARROW) {
+        if (p.key === ' ') {
           console.log("Tecla UP pressionada");
           player.jump();
         }
+        player.update() 
+                
       };
+      
     };
 
-    const P5 = require('p5');
     const instance = new p5(sketch, sketchRef.current);
 
     return () => {

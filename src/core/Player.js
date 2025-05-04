@@ -4,7 +4,7 @@ export class Player {
     this.pos = p.createVector(x, y);
     this.vy = 0;
     this.gravity = 0.3;
-    this.jumpForce = -15;
+    this.jumpForce = -11;
     this.radius = 15;
     this.onGround = false;
   }
@@ -14,12 +14,19 @@ export class Player {
     this.pos.y += this.vy;
     this.onGround = false;
 
+    if (this.pos.y > this.p.height) {
+      this.pos.y = this.p.height -20;
+      this.vy = 0;
+      this.onGround = true; 
+    }
+
     platforms.forEach(platform => {
       if (platform.isColliding(this)) {
         this.landOn(platform);
         platform.onTouch();
       }
     });
+
   }
 
   landOn(platform) {
@@ -30,14 +37,23 @@ export class Player {
 
   draw() {
     this.p.fill(200, 100, 255);
-    this.p.ellipse(this.pos.x, this.pos.y, 30, 30);
+    this.p.ellipse(this.pos.x, this.pos.y, 30, 30); 
   }
 
   jump() {
     console.log("Tentando pular. onGround:", this.onGround);
     if (this.onGround) {
       this.vy = this.jumpForce;
+      this.onGround = false
     }
+  }
+
+  moveLeft() {
+    this.pos.x -= 5;
+  }
+
+  moveRight() {
+    this.pos.x += 5;
   }
 
   touches(orbe) {

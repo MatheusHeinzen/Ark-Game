@@ -15,7 +15,7 @@ export class Orbe {
         angle: p.random(360),
         size: p.random(3, 8),
         speed: p.random(0.5, 1.5),
-      
+
       });
     }
   }
@@ -24,24 +24,26 @@ export class Orbe {
     try {
       this.obstacleImgs = [
         this.p.loadImage('/assets/obstacle1.png'),
-        this.p.loadImage('/assets/obstacle2.png'),
-        this.p.loadImage('/assets/obstacle3.png')
+        this.p.loadImage('assets/obstacle2.png'),
+        this.p.loadImage('assets/obstacle3.png')
       ];
     } catch (e) {
       console.error("Erro ao carregar imagens:", e);
     }
   }
   setupObstacles() {
+    this.obstacles = []; 
     for (let i = 0; i < 8; i++) {
       this.obstacles.push({
         img: this.p.random(this.obstacleImgs),
-        orbitRadius: this.p.random(200, 300), // Aumentado de 120-200 para 200-300
+        orbitRadius: this.p.random(200, 300),
         angle: this.p.random(360),
         speed: this.p.random(0.3, 0.8),
         size: this.p.random(30, 60)
       });
     }
   }
+  
 
   getPosition() {
     return this.p.createVector(this.x, this.y);
@@ -88,21 +90,21 @@ export class Orbe {
     }
 
     p.pop();
-    
-    // Desenha obstáculos orbitais
-    this.obstacles.forEach(obs => {
-      p.push();
-      const x = p.cos(obs.angle) * obs.orbitRadius;
-      const y = p.sin(obs.angle) * obs.orbitRadius;
-      
-      p.rotate(obs.angle);
-      if (obs.img) {
-        p.imageMode(p.CENTER);
-        p.image(obs.img, x, y, obs.size, obs.size);
-      }
-      p.pop();
-    });
 
+    // this.obstacles.forEach(obs => {
+    //   obs.angle += obs.speed;
     
+    //   this.p.push();
+    //   const x = this.p.cos(obs.angle) * obs.orbitRadius;
+    //   const y = this.p.sin(obs.angle) * obs.orbitRadius;
+    
+    //   this.p.imageMode(this.p.CENTER);
+    //   if (obs.img) {
+    //     this.p.image(obs.img, x, y, obs.size, obs.size);
+    //   }
+    //   this.p.pop();
+    // });
+    
+
   }
 }

@@ -49,19 +49,18 @@ export class Platform {
     }
   
     isColliding(player) {
-      if (!player || !player.pos) return false; 
+      if (!player || !player.pos) return false;
       if (this.broken) return false;
-  
-      const closestX = Math.max(this.pos.x - this.width/2, 
-                    Math.min(player.pos.x, this.pos.x + this.width/2));
-      const closestY = Math.max(this.pos.y - this.height/2, 
-              Math.min(player.pos.y, this.pos.y + this.height/2));
 
-      const distanceX = player.pos.x - closestX;
-      const distanceY = player.pos.y - closestY;
+      const dentroX = player.pos.x + player.radius > this.pos.x - this.width / 2 &&
+                      player.pos.x - player.radius < this.pos.x + this.width / 2;
 
-      return (distanceX * distanceX + distanceY * distanceY) < (player.radius * player.radius);
+      const tocandoTopo = player.pos.y + player.radius > this.pos.y - this.height / 2 &&
+                          player.pos.y + player.vy <= this.pos.y - this.height / 2;
+
+      return dentroX && tocandoTopo;
     }
+
   
     onTouch() {
       if (this.type === 'quebradiça' && this.timer === 0) {
