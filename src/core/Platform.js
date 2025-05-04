@@ -49,6 +49,7 @@ export class Platform {
     }
   
     isColliding(player) {
+      if (!player || !player.pos) return false; 
       if (this.broken) return false;
   
       const px = player.pos.x;

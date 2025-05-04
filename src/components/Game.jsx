@@ -8,6 +8,8 @@ let orbe;
 let platforms = [];
 let player;
 
+
+
 export default function Game({ onGameEnd }) {
   const sketchRef = useRef();
 
@@ -16,7 +18,7 @@ export default function Game({ onGameEnd }) {
       p.setup = () => {
         p.createCanvas(800, 600);
         orbe = new Orbe(p.width / 2, p.height / 2, 40, p);
-        player = new Player(100, 500);
+        player = new Player(p, 100, 500);
 
         platforms = [
           new Platform(300, 400, 100, 20, 'normal', p),
@@ -41,12 +43,15 @@ export default function Game({ onGameEnd }) {
           }
         });
 
-        player.update();
-        player.draw();
+
+        player.update(platforms);
+        // player.draw();
 
         // Verifica se o jogador alcançou a orbe
-        if (player.pos.dist(orbe.getPosition()) < orbe.radius) {
-          onGameEnd();
+        if (player?.pos && orbe) {
+          if (player.pos.dist(orbe.getPosition()) < orbe.radius) {
+            onGameEnd();
+          }
         }
       };
 
