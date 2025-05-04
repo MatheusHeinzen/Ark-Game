@@ -4,6 +4,7 @@ import { Orbe } from '../core/Orbe';
 import { Platform } from '../core/Platform';
 import { Player } from '../core/Player';
 
+let bgDestrocos;
 let orbe;
 let platforms = [];
 let player;
@@ -17,18 +18,21 @@ export default function Game({ onGameEnd }) {
     const sketch = (p) => {
       p.setup = () => {
         p.createCanvas(800, 600);
-        orbe = new Orbe(p.width / 2, p.height / 2, 40, p);
+        orbe = new Orbe(p.width / 2,  p.height / 2 -200, 40, p);
         player = new Player(p, 100, 500);
+        
 
         platforms = [
           new Platform(300, 400, 100, 20, 'normal', p),
           new Platform(500, 300, 100, 20, 'quebradiça', p),
           new Platform(200, 200, 100, 20, 'móvel', p),
+          new Platform(100, 600, 1500, 20, 'normal', p),
         ];
       };
 
       p.draw = () => {
         p.background(20);
+
 
         orbe.update();
         orbe.draw();
@@ -37,15 +41,12 @@ export default function Game({ onGameEnd }) {
           platform.update();
           platform.draw();
 
-          if (platform.isColliding(player)) {
-            player.landOn(platform);
-            platform.onTouch();
-          }
+          
         });
 
 
         player.update(platforms);
-        // player.draw();
+        player.draw();
 
         // Verifica se o jogador alcançou a orbe
         if (player?.pos && orbe) {
@@ -56,7 +57,8 @@ export default function Game({ onGameEnd }) {
       };
 
       p.keyPressed = () => {
-        if (p.key === ' ' || p.keyCode === p.UP_ARROW) {
+        if (p.keyCode === p.UP_ARROW) {
+          console.log("Tecla UP pressionada");
           player.jump();
         }
       };

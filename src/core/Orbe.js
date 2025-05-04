@@ -5,7 +5,9 @@ export class Orbe {
     this.radius = radius;
     this.angle = 0;
     this.debris = [];
+    this.obstacles = [];
     this.p = p;
+    this.obstacleImgs = [];
 
     for (let i = 0; i < 50; i++) {
       this.debris.push({
@@ -13,6 +15,26 @@ export class Orbe {
         angle: p.random(360),
         size: p.random(3, 8),
         speed: p.random(0.5, 1.5),
+      });
+    }
+  }
+
+  preload() {
+    // Carrega imagens dos obstáculos (substitua pelos seus caminhos)
+    for (let i = 1; i <= 3; i++) {
+      this.obstacleImgs.push(this.p.loadImage(`${process.env.PUBLIC_URL}/assets/obstacle${i}.png`));
+    }
+  }
+
+  setupObstacles() {
+    // Cria obstáculos orbitais
+    for (let i = 0; i < 8; i++) {
+      this.obstacles.push({
+        img: this.p.random(this.obstacleImgs),
+        orbitRadius: this.p.random(120, 200),
+        angle: this.p.random(360),
+        speed: this.p.random(0.3, 0.8),
+        size: this.p.random(30, 60)
       });
     }
   }
@@ -54,7 +76,6 @@ export class Orbe {
       p.ellipse(0, 0, 130 + i * 15);
     }
 
-    // Destroços
     p.fill(180, 100, 255);
     for (let d of this.debris) {
       let x = p.cos(d.angle) * d.radius;
@@ -63,5 +84,22 @@ export class Orbe {
     }
 
     p.pop();
+    
+    // Desenha obstáculos orbitais
+    this.obstacles.forEach(obs => {
+      p.push();
+      const x = p.cos(obs.angle) * obs.orbitRadius;
+      const y = p.sin(obs.angle) * obs.orbitRadius;
+      
+      // Aplica força gravitacional (os obstáculos "puxam" o jogador)
+      p.rotate(obs.angle);
+      if (obs.img) {
+        p.imageMode(p.CENTER);
+        p.image(obs.img, x, y, obs.size, obs.size);
+      }
+      p.pop();
+    });
+
+    
   }
 }

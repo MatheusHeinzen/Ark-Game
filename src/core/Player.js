@@ -3,8 +3,9 @@ export class Player {
     this.p = p;
     this.pos = p.createVector(x, y);
     this.vy = 0;
-    this.gravity = 0.6;
-    this.jump = -12;
+    this.gravity = 0.3;
+    this.jumpForce = -15;
+    this.radius = 15;
     this.onGround = false;
   }
 
@@ -24,7 +25,7 @@ export class Player {
   landOn(platform) {
     this.vy = 0;
     this.onGround = true;
-    this.pos.y = platform.pos.y - platform.height / 2 - 15; // ajusta base do jogador
+    this.pos.y = platform.pos.y - platform.height/2 - this.radius;
   }
 
   draw() {
@@ -32,9 +33,10 @@ export class Player {
     this.p.ellipse(this.pos.x, this.pos.y, 30, 30);
   }
 
-  handleKey(key) {
-    if (key === ' ' && this.onGround) {
-      this.vy = this.jump;
+  jump() {
+    console.log("Tentando pular. onGround:", this.onGround);
+    if (this.onGround) {
+      this.vy = this.jumpForce;
     }
   }
 
@@ -46,4 +48,6 @@ export class Player {
     this.pos = this.p.createVector(100, 500);
     this.vy = 0;
   }
+
 }
+

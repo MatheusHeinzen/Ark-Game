@@ -21,7 +21,7 @@ export class Platform {
       }
   
       if (this.type === 'móvel') {
-        this.pos.x = this.baseX + this.p.sin(this.p.frameCount * 0.05) * this.amplitude;
+        this.pos.x = this.baseX + this.p.sin(this.p.frameCount * 0.5) * this.amplitude;
       }
     }
   
@@ -52,15 +52,15 @@ export class Platform {
       if (!player || !player.pos) return false; 
       if (this.broken) return false;
   
-      const px = player.pos.x;
-      const py = player.pos.y + player.size / 2; // pé do player
-  
-      return (
-        px > this.pos.x - this.width / 2 &&
-        px < this.pos.x + this.width / 2 &&
-        py > this.pos.y - this.height / 2 &&
-        py < this.pos.y + this.height / 2
-      );
+      const closestX = Math.max(this.pos.x - this.width/2, 
+                    Math.min(player.pos.x, this.pos.x + this.width/2));
+      const closestY = Math.max(this.pos.y - this.height/2, 
+              Math.min(player.pos.y, this.pos.y + this.height/2));
+
+      const distanceX = player.pos.x - closestX;
+      const distanceY = player.pos.y - closestY;
+
+      return (distanceX * distanceX + distanceY * distanceY) < (player.radius * player.radius);
     }
   
     onTouch() {
