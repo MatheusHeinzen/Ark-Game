@@ -4,11 +4,10 @@ import { Orbe } from '../core/Orbe';
 import { Platform } from '../core/Platform';
 import { Player } from '../core/Player';
 
-let bgDestrocos;
 let orbe;
 let platforms = [];
 let player;
-
+let assetsLoaded = false;
 
 
 export default function Game({ onGameEnd }) {
@@ -19,8 +18,12 @@ export default function Game({ onGameEnd }) {
       p.setup = () => {
         p.createCanvas(800, 600);
         orbe = new Orbe(p.width / 2,  p.height / 2 -200, 40, p);
+        orbe.preload();
         player = new Player(p, 100, 500);
         
+        if (assetsLoaded) {
+          orbe.setupObstacles();
+        }
 
         platforms = [
           new Platform(300, 400, 100, 20, 'normal', p),
@@ -33,7 +36,7 @@ export default function Game({ onGameEnd }) {
       p.draw = () => {
         p.background(20);
 
-
+       
         orbe.update();
         orbe.draw();
 

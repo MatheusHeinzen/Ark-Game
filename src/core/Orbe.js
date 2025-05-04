@@ -15,23 +15,27 @@ export class Orbe {
         angle: p.random(360),
         size: p.random(3, 8),
         speed: p.random(0.5, 1.5),
+      
       });
     }
   }
 
   preload() {
-    // Carrega imagens dos obstáculos (substitua pelos seus caminhos)
-    for (let i = 1; i <= 3; i++) {
-      this.obstacleImgs.push(this.p.loadImage(`${process.env.PUBLIC_URL}/assets/obstacle${i}.png`));
+    try {
+      this.obstacleImgs = [
+        this.p.loadImage('/assets/obstacle1.png'),
+        this.p.loadImage('/assets/obstacle2.png'),
+        this.p.loadImage('/assets/obstacle3.png')
+      ];
+    } catch (e) {
+      console.error("Erro ao carregar imagens:", e);
     }
   }
-
   setupObstacles() {
-    // Cria obstáculos orbitais
     for (let i = 0; i < 8; i++) {
       this.obstacles.push({
         img: this.p.random(this.obstacleImgs),
-        orbitRadius: this.p.random(120, 200),
+        orbitRadius: this.p.random(200, 300), // Aumentado de 120-200 para 200-300
         angle: this.p.random(360),
         speed: this.p.random(0.3, 0.8),
         size: this.p.random(30, 60)
@@ -91,7 +95,6 @@ export class Orbe {
       const x = p.cos(obs.angle) * obs.orbitRadius;
       const y = p.sin(obs.angle) * obs.orbitRadius;
       
-      // Aplica força gravitacional (os obstáculos "puxam" o jogador)
       p.rotate(obs.angle);
       if (obs.img) {
         p.imageMode(p.CENTER);
