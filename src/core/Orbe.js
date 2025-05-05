@@ -23,9 +23,9 @@ export class Orbe {
   preload() {
     try {
       this.obstacleImgs = [
-        this.p.loadImage('/assets/obstacle1.png'),
-        this.p.loadImage('assets/obstacle2.png'),
-        this.p.loadImage('assets/obstacle3.png')
+        this.p.loadImage('./assets/obstacle1.png'),
+        this.p.loadImage('./assets/obstacle2.png'),
+        this.p.loadImage('./assets/obstacle3.png')
       ];
     } catch (e) {
       console.error("Erro ao carregar imagens:", e);
@@ -91,6 +91,7 @@ export class Orbe {
 
     p.pop();
 
+    // Não funcionaaaaaaa
     // this.obstacles.forEach(obs => {
     //   obs.angle += obs.speed;
     
