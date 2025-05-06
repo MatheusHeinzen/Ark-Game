@@ -20,26 +20,28 @@ export class Orbe {
     }
   }
 
-  preload() {
+  async setupObstacles() {
+    this.obstacles = [];
+    
+    // Carrega as imagens de forma assíncrona
     try {
-      this.obstacleImgs = [
-        this.p.loadImage('./assets/obstacle1.png'),
-        this.p.loadImage('./assets/obstacle2.png'),
-        this.p.loadImage('./assets/obstacle3.png')
-      ];
+      const obstacle1 = await this.p.loadImage('/assets/obstacle1.png');
+      const obstacle2 = await this.p.loadImage('/assets/obstacle2.png');
+      const obstacle3 = await this.p.loadImage('/assets/obstacle3.png');
+      this.obstacleImgs = [obstacle1, obstacle2, obstacle3];
     } catch (e) {
       console.error("Erro ao carregar imagens:", e);
+      return;
     }
-  }
-  setupObstacles() {
-    this.obstacles = []; 
+  
+    // Configura os obstáculos
     for (let i = 0; i < 8; i++) {
       this.obstacles.push({
         img: this.p.random(this.obstacleImgs),
         orbitRadius: this.p.random(200, 300),
         angle: this.p.random(360),
         speed: this.p.random(0.3, 0.8),
-        size: this.p.random(30, 60)
+        size: this.p.random(30, 60),
       });
     }
   }
@@ -61,7 +63,7 @@ export class Orbe {
     p.push();
     p.translate(this.x, this.y);
     p.angleMode(p.DEGREES);
-
+  
     // Aura giratória
     p.push();
     p.rotate(this.angle);
@@ -71,41 +73,39 @@ export class Orbe {
       p.ellipse(p.cos(i * 36) * r, p.sin(i * 36) * r, 60, 20);
     }
     p.pop();
-
+  
     // Núcleo
     p.fill(100, 100, 255);
     p.ellipse(0, 0, 80, 80);
-
+  
     // Brilho externo
     for (let i = 0; i < 5; i++) {
       p.fill(100, 100, 255, 40 - i * 8);
       p.ellipse(0, 0, 130 + i * 15);
     }
-
+  
     p.fill(180, 100, 255);
     for (let d of this.debris) {
       let x = p.cos(d.angle) * d.radius;
       let y = p.sin(d.angle) * d.radius;
       p.ellipse(x, y, d.size);
     }
-
+  
+    // Desenha os obstáculos
+    this.obstacles.forEach(obs => {
+      obs.angle += obs.speed;
+  
+      p.push();
+      const x = p.cos(obs.angle) * obs.orbitRadius;
+      const y = p.sin(obs.angle) * obs.orbitRadius;
+  
+      p.imageMode(p.CENTER);
+      if (obs.img) {
+        p.image(obs.img, x, y, obs.size, obs.size);
+      }
+      p.pop();
+    });
+  
     p.pop();
-
-    // Não funcionaaaaaaa
-    // this.obstacles.forEach(obs => {
-    //   obs.angle += obs.speed;
-    
-    //   this.p.push();
-    //   const x = this.p.cos(obs.angle) * obs.orbitRadius;
-    //   const y = this.p.sin(obs.angle) * obs.orbitRadius;
-    
-    //   this.p.imageMode(this.p.CENTER);
-    //   if (obs.img) {
-    //     this.p.image(obs.img, x, y, obs.size, obs.size);
-    //   }
-    //   this.p.pop();
-    // });
-    
-
   }
 }

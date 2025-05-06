@@ -6,52 +6,39 @@ import { Player } from '../core/Player';
 
 export default function Game({ onGameEnd }) {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
-  
+
   const sketch = useCallback((p) => {
     let orbe, platforms, player;
 
-    p.preload = () => {
+    const loadAssets = async () => {
       try {
         orbe = new Orbe(0, 0, 40, p);
-        orbe.preload();
-        
+        await orbe.setupObstacles();
+
         platforms = [
           new Platform(200, 0, 0.5, 100, 30, 'normal', p),
           new Platform(250, 90, 0.3, 100, 30, 'quebradiça', p),
           new Platform(300, 180, 0.2, 100, 30, 'móvel', p),
         ];
-        
-        // Carrega assets de forma assíncrona
-        Promise.all(
-          platforms.map(platform => 
-            new Promise(resolve => {
-              platform.preload();
-              if (platform.img) {
-                platform.img.onload = resolve;
-                platform.img.onerror = resolve;
-              } else {
-                resolve();
-              }
-            })
-          )
-        ).then(() => setAssetsLoaded(true));
-        
+
+        for (const platform of platforms) {
+          await platform.preload();
+        }
+
         player = new Player(p, 100, 500);
+        setAssetsLoaded(true);
       } catch (error) {
-        console.error('Preload error:', error);
+        console.error('Erro ao carregar assets:', error);
       }
     };
 
-    p.setup = () => {
+    p.setup = async () => {
+      await loadAssets();
       if (!assetsLoaded) return;
-      
-      try {
-        p.createCanvas(800, 600);
-        orbe.x = p.width / 2;
-        orbe.y = p.height / 2 - 200;
-      } catch (error) {
-        console.error('Setup error:', error);
-      }
+
+      p.createCanvas(800, 600);
+      orbe.x = p.width / 2;
+      orbe.y = p.height / 2 - 200;
     };
 
     p.draw = () => {
@@ -62,7 +49,7 @@ export default function Game({ onGameEnd }) {
         orbe.update();
         orbe.draw();
 
-        platforms.forEach(platform => {
+        platforms.forEach((platform) => {
           platform.update(orbe.getPosition());
           platform.draw();
         });
@@ -72,12 +59,12 @@ export default function Game({ onGameEnd }) {
 
         if (p.keyIsDown(p.LEFT_ARROW)) player.moveLeft();
         if (p.keyIsDown(p.RIGHT_ARROW)) player.moveRight();
-        
+
         if (player.pos.dist(orbe.getPosition()) < orbe.radius) {
           onGameEnd();
         }
       } catch (error) {
-        console.error('Draw error:', error);
+        console.error('Erro no draw:', error);
       }
     };
 

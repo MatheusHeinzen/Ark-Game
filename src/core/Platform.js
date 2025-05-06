@@ -21,18 +21,12 @@ export class Platform {
     }
   }
 
-  preload() {
+  async preload() {
     try {
       const imgName = `obstacle${this.type === 'quebradiça' ? '1' : this.type === 'móvel' ? '2' : '3'}`;
-      this.img = this.p.loadImage(`./assets/${imgName}.png`);
-      
-      // Fallback para imagens ausentes
-      this.img.onerror = () => {
-        console.warn(`Failed to load: ${imgName}.png`);
-        this.img = null;
-      };
+      this.img = await this.p.loadImage(`/assets/${imgName}.png`);
     } catch (error) {
-      console.error('Platform preload error:', error);
+      console.error('Erro ao carregar imagem da plataforma:', error);
       this.img = null;
     }
   }

@@ -10,18 +10,15 @@ export const useP5Sketch = (sketch) => {
 
     const initP5 = () => {
       try {
-        // Verifica se o p5 está disponível
         if (typeof p5 === 'undefined') {
           throw new Error('p5.js not loaded');
         }
 
-        // Limpa qualquer instância existente
         if (p5Instance.current) {
           p5Instance.current.remove();
           p5Instance.current = null;
         }
 
-        // Cria nova instância com tratamento de erros
         p5Instance.current = new p5((p) => {
           try {
             sketch(p);
@@ -30,7 +27,6 @@ export const useP5Sketch = (sketch) => {
             p.noLoop();
           }
         }, sketchRef.current);
-
       } catch (initError) {
         console.error('p5 initialization error:', initError);
       }
