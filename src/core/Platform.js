@@ -1,92 +1,64 @@
 export class Platform {
-  constructor(orbitRadius, angle, speed, w, h, type = 'normal', p) {
-    try {
-      this.p = p;
-      if (!p) throw new Error('p5 instance is required');
-      
-      this.orbitRadius = orbitRadius;
-      this.angle = angle;
-      this.speed = speed;
-      this.width = w;
-      this.height = h;
-      this.type = type;
-      this.broken = false;
-      this.timer = 0;
-      this.pos = p.createVector(0, 0);
-      this.img = null;
-      this.rotation = 0;
-    } catch (error) {
-      console.error('Platform constructor error:', error);
-      throw error;
-    }
+  constructor(x, y, speed, width, height, type, p) {
+    this.x = x;
+    this.y = y;
+    this.speed = speed;
+    this.width = width;
+    this.height = height;
+    this.type = type;
+    this.p = p;
+    this.img = null; // Apenas para tipos que usam imagens
   }
 
   async preload() {
-    try {
-      const imgName = `obstacle${this.type === 'quebradiça' ? '1' : this.type === 'móvel' ? '2' : '3'}`;
-      this.img = await this.p.loadImage(`/assets/${imgName}.png`);
-    } catch (error) {
-      console.error('Erro ao carregar imagem da plataforma:', error);
-      this.img = null;
+    if (this.type !== 'asfalto') {
+      try {
+        const imgName = `platform_${this.type}.png`;
+        this.img = await this.p.loadImage(`/assets/${imgName}`);
+      } catch (error) {
+        console.error('Erro ao carregar imagem da plataforma:', error);
+        this.img = null;
+      }
     }
   }
 
   update(orbePosition) {
-    if (this.broken) return;
-    
-    this.angle += this.speed;
-    this.rotation += this.speed * 0.5; // Rotação adicional para efeito visual
-    
-    this.pos.x = orbePosition.x + this.p.cos(this.angle) * this.orbitRadius;
-    this.pos.y = orbePosition.y + this.p.sin(this.angle) * this.orbitRadius;
-
-    if (this.type === 'quebradiça' && this.timer > 0) {
-      this.timer++;
-      if (this.timer > 60) this.broken = true;
+    if (this.type === 'móvel') {
+      this.x += this.speed;
+      if (this.x < 0 || this.x > this.p.width) {
+        this.speed *= -1;
+      }
     }
   }
 
   draw() {
-    if (this.broken) return;
-  
-    this.p.push();
-    this.p.translate(this.pos.x, this.pos.y);
-    this.p.rotate(this.rotation);
-    
-    if (this.img) {
-      this.p.imageMode(this.p.CENTER);
-      this.p.image(this.img, 0, 0, this.width, this.height);
+    const p = this.p;
+    if (this.type === 'asfalto') {
+      // Desenha o asfalto diretamente com p5.js
+      p.fill(50); // Cor cinza escuro
+      p.rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+      p.fill(255, 255, 0); // Faixa amarela
+      p.rect(this.x - this.width / 2, this.y - 5, this.width, 5);
+    } else if (this.img) {
+      // Desenha plataformas com imagens
+      p.imageMode(p.CENTER);
+      p.image(this.img, this.x, this.y, this.width, this.height);
     } else {
-      // Fallback visual
-      this.p.rectMode(this.p.CENTER);
-      this.p.fill(this.type === 'quebradiça' ? '#ff6464' : 
-                 this.type === 'móvel' ? '#64ff64' : '#6464ff');
-      this.p.rect(0, 0, this.width, this.height);
+      // Desenha plataformas padrão
+      p.fill(100);
+      p.rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
     }
-    
-    this.p.pop();
-  }
-  
-  isColliding(player) {
-    if (!player || !player.pos || this.broken) return false;
-  
-    // Calcula os limites considerando a rotação (simplificado)
-    const halfWidth = this.width / 2;
-    const halfHeight = this.height / 2;
-    
-    const dentroX = player.pos.x + player.radius > this.pos.x - halfWidth &&
-                    player.pos.x - player.radius < this.pos.x + halfWidth;
-    
-    const tocandoTopo = player.pos.y + player.radius > this.pos.y - halfHeight &&
-                        player.pos.y + player.vy <= this.pos.y - halfHeight;
-  
-    return dentroX && tocandoTopo;
   }
 
+  isColliding(player) {
+    const px = player.pos.x;
+    const py = player.pos.y + player.radius; // Considera o raio do jogador (parte inferior)
+    const top = this.y - this.height / 2; // Topo da plataforma
+    const bottom = this.y + this.height / 2; // Base da plataforma
+    const left = this.x - this.width / 2; // Lado esquerdo da plataforma
+    const right = this.x + this.width / 2; // Lado direito da plataforma
   
-    onTouch() {
-      if (this.type === 'quebradiça' && this.timer === 0) {
-        this.timer = 1;
-      }
-    }
+    // Verifica se o jogador está dentro dos limites da plataforma
+    return px > left && px < right && py > top && py < bottom && player.vy > 0;
   }
+}

@@ -11,22 +11,25 @@ export class Player {
   }
 
   update(platforms, orbePosition) {
-    // Aplica gravidade normal
+    // Aplica gravidade
     this.vy += this.gravity;
     this.pos.y += this.vy;
-    
+  
     // Aplica movimento horizontal
     this.pos.x += this.vx;
-
+  
     // Colisão com plataformas
+    let onGround = false;
     platforms.forEach(platform => {
       if (platform.isColliding(this)) {
-        this.pos.y = platform.pos.y - platform.height/2 - this.radius;
-        this.vy = 0;
-        this.isJumping = false;
+        this.pos.y = platform.y - platform.height / 2 - this.radius; // Reposiciona o jogador no topo da plataforma
+        this.vy = 0; // Zera a velocidade vertical
+        onGround = true; // Define que o jogador está no chão
       }
     });
-
+  
+    this.isJumping = !onGround; // Atualiza o estado de pulo
+  
     // Limita o jogador à tela
     this.pos.x = this.p.constrain(this.pos.x, this.radius, this.p.width - this.radius);
   }
@@ -109,10 +112,10 @@ export class Player {
   
 
   jump() {
-    console.log("Tentando pular. onGround:", this.onGround);
-    if (this.onGround) {
+    console.log("Tentando pular. onGround:", this.isJumping === false);
+    if (!this.isJumping) {
       this.vy = this.jumpForce;
-      this.onGround = false
+      this.isJumping = true; // Define como pulando
     }
   }
 
