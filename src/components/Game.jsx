@@ -1,84 +1,92 @@
-import React, { useEffect, useRef } from 'react';
-import p5 from 'p5';
+import React, { useState, useCallback } from 'react';
+import { useP5Sketch } from '../hooks/useP5Sketch';
 import { Orbe } from '../core/Orbe';
 import { Platform } from '../core/Platform';
 import { Player } from '../core/Player';
 
-let orbe;
-let platforms = [];
-let player;
-
-
 export default function Game({ onGameEnd }) {
-  const sketchRef = useRef();
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  
+  const sketch = useCallback((p) => {
+    let orbe, platforms, player;
 
-  useEffect(() => {
-    const sketch = (p) => {
-
-      p.setup = () => {
-        p.createCanvas(800, 600);
-        
-        orbe = new Orbe(p.width / 2, p.height / 2 - 200, 40, p);
+    p.preload = () => {
+      try {
+        orbe = new Orbe(0, 0, 40, p);
         orbe.preload();
-        orbe.setupObstacles();
-
-        player = new Player(p, 100, 500);     
-
+        
         platforms = [
-          new Platform(300, 400, 100, 20, 'normal', p),
-          new Platform(500, 300, 100, 20, 'quebradiça', p),
-          new Platform(200, 200, 100, 20, 'móvel', p),
-          new Platform(100, 600, 1500, 20, 'normal', p),
+          new Platform(200, 0, 0.5, 100, 30, 'normal', p),
+          new Platform(250, 90, 0.3, 100, 30, 'quebradiça', p),
+          new Platform(300, 180, 0.2, 100, 30, 'móvel', p),
         ];
-      };
+        
+        // Carrega assets de forma assíncrona
+        Promise.all(
+          platforms.map(platform => 
+            new Promise(resolve => {
+              platform.preload();
+              if (platform.img) {
+                platform.img.onload = resolve;
+                platform.img.onerror = resolve;
+              } else {
+                resolve();
+              }
+            })
+          )
+        ).then(() => setAssetsLoaded(true));
+        
+        player = new Player(p, 100, 500);
+      } catch (error) {
+        console.error('Preload error:', error);
+      }
+    };
 
-      p.draw = () => {
+    p.setup = () => {
+      if (!assetsLoaded) return;
+      
+      try {
+        p.createCanvas(800, 600);
+        orbe.x = p.width / 2;
+        orbe.y = p.height / 2 - 200;
+      } catch (error) {
+        console.error('Setup error:', error);
+      }
+    };
+
+    p.draw = () => {
+      if (!assetsLoaded || !orbe || !platforms || !player) return;
+
+      try {
         p.background(20);
-
         orbe.update();
         orbe.draw();
 
-        platforms.forEach((platform) => {
-          platform.update();
+        platforms.forEach(platform => {
+          platform.update(orbe.getPosition());
           platform.draw();
         });
 
-
-        player.update(platforms);
+        player.update(platforms, orbe.getPosition());
         player.draw();
 
-        if (p.keyIsDown(p.LEFT_ARROW)) {
-          player.moveLeft();
-        }
-        if (p.keyIsDown(p.RIGHT_ARROW)) {
-          player.moveRight();
-        }
+        if (p.keyIsDown(p.LEFT_ARROW)) player.moveLeft();
+        if (p.keyIsDown(p.RIGHT_ARROW)) player.moveRight();
         
-        // Verifica se o jogador alcançou a orbe
-        if (player?.pos && orbe) {
-          if (player.pos.dist(orbe.getPosition()) < orbe.radius) {
-            onGameEnd();
-          }
+        if (player.pos.dist(orbe.getPosition()) < orbe.radius) {
+          onGameEnd();
         }
-      };
-
-      p.keyPressed = () => {
-        if (p.key === ' ') {
-          console.log("Tecla UP pressionada");
-          player.jump();
-        }
-        player.update() 
-                
-      };
-      
+      } catch (error) {
+        console.error('Draw error:', error);
+      }
     };
 
-    const instance = new p5(sketch, sketchRef.current);
-
-    return () => {
-      instance.remove();
+    p.keyPressed = () => {
+      if (p.key === ' ') player.jump();
     };
-  }, [onGameEnd]);
+  }, [assetsLoaded, onGameEnd]);
 
-  return <div ref={sketchRef}></div>;
+  const sketchRef = useP5Sketch(sketch);
+
+  return <div ref={sketchRef} style={{ width: '100%', height: '100%' }} />;
 }

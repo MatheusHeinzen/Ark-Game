@@ -1,33 +1,36 @@
 export class Player {
   constructor(p, x, y) {
-    this.p = p;
+    this.p = p; // Armazena a instância do p5
     this.pos = p.createVector(x, y);
+    this.radius = 20;
+    this.vx = 0;
     this.vy = 0;
-    this.gravity = 0.3;
-    this.jumpForce = -11;
-    this.radius = 15;
-    this.onGround = false;
+    this.gravity = 0.5;
+    this.jumpForce = -12;
+    this.isJumping = false;
   }
 
-  update(platforms = []) {
+  update(platforms, orbePosition) {
+    // Aplica gravidade normal
     this.vy += this.gravity;
     this.pos.y += this.vy;
-    this.onGround = false;
+    
+    // Aplica movimento horizontal
+    this.pos.x += this.vx;
 
-    if (this.pos.y > this.p.height) {
-      this.pos.y = this.p.height -20;
-      this.vy = 0;
-      this.onGround = true; 
-    }
-
+    // Colisão com plataformas
     platforms.forEach(platform => {
       if (platform.isColliding(this)) {
-        this.landOn(platform);
-        platform.onTouch();
+        this.pos.y = platform.pos.y - platform.height/2 - this.radius;
+        this.vy = 0;
+        this.isJumping = false;
       }
     });
 
+    // Limita o jogador à tela
+    this.pos.x = this.p.constrain(this.pos.x, this.radius, this.p.width - this.radius);
   }
+
 
   landOn(platform) {
     this.vy = 0;
