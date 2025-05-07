@@ -1,84 +1,125 @@
-import React, { useEffect, useRef } from 'react';
-import p5 from 'p5';
+import React, { useState, useCallback } from 'react';
+import { useP5Sketch } from '../hooks/useP5Sketch';
 import { Orbe } from '../core/Orbe';
 import { Platform } from '../core/Platform';
 import { Player } from '../core/Player';
 
-let orbe;
-let platforms = [];
-let player;
-
-
 export default function Game({ onGameEnd }) {
-  const sketchRef = useRef();
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
 
-  useEffect(() => {
-    const sketch = (p) => {
+  const sketch = useCallback((p) => {
+    let orbe, platforms, player, bgImage;
+    let startTime;
+    let lives = 50; // Número inicial de vidas
 
-      p.setup = () => {
-        p.createCanvas(800, 600);
-        
-        orbe = new Orbe(p.width / 2, p.height / 2 - 200, 40, p);
-        orbe.preload();
-        orbe.setupObstacles();
+    const loadAssets = async () => {
+      try {
+        console.log("Iniciando o carregamento dos assets...");
+        bgImage = await p.loadImage('/assets/bgDestroços.png');
+        console.log("Imagem de fundo carregada.");
 
-        player = new Player(p, 100, 500);     
+        orbe = new Orbe(40, p);
+        await orbe.setupObstacles();
+        console.log("Órbita configurada.");
 
-        platforms = [
-          new Platform(300, 400, 100, 20, 'normal', p),
-          new Platform(500, 300, 100, 20, 'quebradiça', p),
-          new Platform(200, 200, 100, 20, 'móvel', p),
-          new Platform(100, 600, 1500, 20, 'normal', p),
-        ];
-      };
+        platforms = [];
 
-      p.draw = () => {
+        // Adiciona a plataforma inicial fixa (asfalto seguro)
+        platforms.push(new Platform(400, 780, 0, 800, 40, 'asfalto', p)); // Plataforma fixa no chão
+
+        const platformCount = 55; // Número de plataformas adicionais
+        for (let i = 0; i < platformCount; i++) {
+          const x = p.random(100, 700); // Posição horizontal aleatória
+          const y = 700 - i * 80; // Posição vertical ajustada (subindo mais suavemente)
+          const type = i % 3 === 0 ? 'quebradiça' : i % 5 === 0 ? 'móvel' : 'normal'; // Alterna os tipos
+          platforms.push(new Platform(x, y, type === 'móvel' ? 0.5 : 0, 100, 30, type, p));
+        }
+
+        console.log("Plataformas configuradas.");
+
+        player = new Player(p, 400, 550, lives); // Jogador começa no centro inferior
+        console.log("Jogador inicializado.");
+
+        setAssetsLoaded(true);
+        console.log("Todos os assets foram carregados.");
+      } catch (error) {
+        console.error("Erro ao carregar assets:", error);
+      }
+    };
+
+    p.setup = async () => {
+      console.log("Carregando assets...");
+      await loadAssets(); // Aguarda o carregamento dos assets
+      if (!assetsLoaded) {
+        console.error("Erro: Assets não foram carregados corretamente.");
+        return;
+      }
+    
+      p.createCanvas(800, 600); // Cria o canvas após carregar os assets
+      startTime = p.millis(); // Marca o início do jogo
+      console.log("Assets carregados com sucesso.");
+    };
+    
+    p.draw = () => {
+      if (!assetsLoaded || !orbe || !platforms || !player) return; // Garante que os assets estão carregados
+
+      try {
         p.background(20);
 
-        orbe.update();
+        // Calcula o deslocamento da câmera
+        let cameraOffset = Math.min(0, p.height / 2 - player.pos.y);
+
+        // Desenha o fundo ajustado ao deslocamento da câmera
+        if (bgImage) {
+          for (let y = cameraOffset; y < cameraOffset + p.height; y += bgImage.height) {
+            p.image(bgImage, 0, y, p.width, bgImage.height);
+          }
+        }
+
+        // Aplica o deslocamento da câmera
+        p.push();
+        p.translate(0, cameraOffset);
+
+        // Exibe o cronômetro
+        const elapsedTime = Math.floor((p.millis() - startTime) / 1000); // Tempo em segundos
+        p.fill(255);
+        p.textSize(20);
+        p.text(`Tempo: ${elapsedTime}s`, 10, -cameraOffset + 30); // Ajusta a posição do texto com base no deslocamento
+        p.text(`Vidas: ${player.lives}`, p.width - 100, -cameraOffset + 30);
+
+        orbe.update(player);
         orbe.draw();
 
         platforms.forEach((platform) => {
-          platform.update();
+          platform.update(orbe.getPosition());
           platform.draw();
         });
 
-
-        player.update(platforms);
+        player.update(platforms, orbe.getPosition());
         player.draw();
 
-        if (p.keyIsDown(p.LEFT_ARROW)) {
-          player.moveLeft();
-        }
-        if (p.keyIsDown(p.RIGHT_ARROW)) {
-          player.moveRight();
-        }
-        
-        // Verifica se o jogador alcançou a orbe
-        if (player?.pos && orbe) {
-          if (player.pos.dist(orbe.getPosition()) < orbe.radius) {
-            onGameEnd();
-          }
-        }
-      };
+        p.pop(); // Restaura o estado do canvas
 
-      p.keyPressed = () => {
-        if (p.key === ' ') {
-          console.log("Tecla UP pressionada");
-          player.jump();
+        if (p.keyIsDown(p.LEFT_ARROW)) player.moveLeft();
+        if (p.keyIsDown(p.RIGHT_ARROW)) player.moveRight();
+        if (p.keyIsDown(p.UP_ARROW)) player.jump();
+
+        if (player.touches(orbe)) {
+          console.log("Jogador alcançou a órbita");
+          onGameEnd();
         }
-        player.update() 
-                
-      };
-      
+      } catch (error) {
+        console.error('Erro no draw:', error);
+      }
     };
+    
 
-    const instance = new p5(sketch, sketchRef.current);
-
-    return () => {
-      instance.remove();
+    p.keyPressed = () => {
+      if (p.key === ' ') player.jump();
     };
-  }, [onGameEnd]);
+  }, [assetsLoaded, onGameEnd]);
 
-  return <div ref={sketchRef}></div>;
+  const sketchRef = useP5Sketch(sketch);
+
+  return <div ref={sketchRef} style={{ width: '100%', height: '100%' }} />;
 }
