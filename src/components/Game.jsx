@@ -10,7 +10,7 @@ export default function Game({ onGameEnd }) {
   const sketch = useCallback((p) => {
     let orbe, platforms, player, bgImage;
     let startTime;
-    let lives = 3; // Número inicial de vidas
+    let lives = 50; // Número inicial de vidas
 
     const loadAssets = async () => {
       try {
@@ -18,19 +18,19 @@ export default function Game({ onGameEnd }) {
         bgImage = await p.loadImage('/assets/bgDestroços.png');
         console.log("Imagem de fundo carregada.");
 
-        orbe = new Orbe(0, 0, 40, p);
+        orbe = new Orbe(40, p);
         await orbe.setupObstacles();
         console.log("Órbita configurada.");
 
         platforms = [];
 
         // Adiciona a plataforma inicial fixa (asfalto seguro)
-        platforms.push(new Platform(400, 580, 0, 800, 40, 'asfalto', p)); // Plataforma fixa no chão
+        platforms.push(new Platform(400, 780, 0, 800, 40, 'asfalto', p)); // Plataforma fixa no chão
 
-        const platformCount = 50; // Número de plataformas adicionais
+        const platformCount = 55; // Número de plataformas adicionais
         for (let i = 0; i < platformCount; i++) {
           const x = p.random(100, 700); // Posição horizontal aleatória
-          const y = 600 - i * 100; // Posição vertical ajustada (subindo mais suavemente)
+          const y = 700 - i * 80; // Posição vertical ajustada (subindo mais suavemente)
           const type = i % 3 === 0 ? 'quebradiça' : i % 5 === 0 ? 'móvel' : 'normal'; // Alterna os tipos
           platforms.push(new Platform(x, y, type === 'móvel' ? 0.5 : 0, 100, 30, type, p));
         }
@@ -102,6 +102,7 @@ export default function Game({ onGameEnd }) {
 
         if (p.keyIsDown(p.LEFT_ARROW)) player.moveLeft();
         if (p.keyIsDown(p.RIGHT_ARROW)) player.moveRight();
+        if (p.keyIsDown(p.UP_ARROW)) player.jump();
 
         if (player.touches(orbe)) {
           console.log("Jogador alcançou a órbita");
@@ -111,6 +112,7 @@ export default function Game({ onGameEnd }) {
         console.error('Erro no draw:', error);
       }
     };
+    
 
     p.keyPressed = () => {
       if (p.key === ' ') player.jump();

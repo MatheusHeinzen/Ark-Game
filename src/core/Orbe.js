@@ -1,16 +1,16 @@
 export class Orbe {
-  constructor(x, y, radius, p) {
+  constructor(radius, p) {
     this.x = 400;
     this.y = 100; // Centraliza a órbita
     this.radius = radius;
     this.angle = 0;
-    this.debris = [];
+    this.particles = [];
     this.obstacles = [];
     this.p = p;
     this.obstacleImgs = [];
 
     for (let i = 0; i < 50; i++) {
-      this.debris.push({
+      this.particles.push({
         radius: p.random(60, 120),
         angle: p.random(360),
         size: p.random(3, 8),
@@ -47,21 +47,19 @@ export class Orbe {
   
 
   getPosition() {
-    return this.p.createVector(400, 100,0);
+    return this.p.createVector(this.x, this.y);
   }
 
   update(player) {
     this.angle += 1.5;
-    for (let d of this.debris) {
+    for (let d of this.particles) {
       d.angle += d.speed;
 
-      const debrisX = this.x + this.p.cos(d.angle) * d.radius;
-      const debrisY = this.y + this.p.sin(d.angle) * d.radius;
-      const distance = this.p.dist(debrisX, debrisY, player.pos.x, player.pos.y);
+      const particlesX = this.x + this.p.cos(d.angle) * d.radius;
+      const particlesY = this.y + this.p.sin(d.angle) * d.radius;
+      const distance = this.p.dist(particlesX, particlesY, player.pos.x, player.pos.y);
 
       if (distance < player.radius + d.size / 2) {
-        console.log('Jogador atingido por destroço!');
-        player.takeDamage();
       }
     }
 
@@ -106,7 +104,7 @@ export class Orbe {
     }
   
     p.fill(180, 100, 255);
-    for (let d of this.debris) {
+    for (let d of this.particles) {
       let x = p.cos(d.angle) * d.radius;
       let y = p.sin(d.angle) * d.radius;
       p.ellipse(x, y, d.size);
