@@ -1,7 +1,7 @@
 export class Orbe {
   constructor(x, y, radius, p) {
-    this.x = x;
-    this.y = y;
+    this.x = 400;
+    this.y = 100; // Centraliza a órbita
     this.radius = radius;
     this.angle = 0;
     this.debris = [];
@@ -15,7 +15,6 @@ export class Orbe {
         angle: p.random(360),
         size: p.random(3, 8),
         speed: p.random(0.5, 1.5),
-
       });
     }
   }
@@ -35,7 +34,7 @@ export class Orbe {
     }
   
     // Configura os obstáculos
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 5; i++) {
       this.obstacles.push({
         img: this.p.random(this.obstacleImgs),
         orbitRadius: this.p.random(200, 300),
@@ -48,14 +47,36 @@ export class Orbe {
   
 
   getPosition() {
-    return this.p.createVector(this.x, this.y);
+    return this.p.createVector(400, 100,0);
   }
 
-  update() {
+  update(player) {
     this.angle += 1.5;
     for (let d of this.debris) {
       d.angle += d.speed;
+
+      const debrisX = this.x + this.p.cos(d.angle) * d.radius;
+      const debrisY = this.y + this.p.sin(d.angle) * d.radius;
+      const distance = this.p.dist(debrisX, debrisY, player.pos.x, player.pos.y);
+
+      if (distance < player.radius + d.size / 2) {
+        console.log('Jogador atingido por destroço!');
+        player.takeDamage();
+      }
     }
+
+    this.obstacles.forEach(obs => {
+      obs.angle += obs.speed;
+
+      const obsX = this.x + this.p.cos(obs.angle) * obs.orbitRadius;
+      const obsY = this.y + this.p.sin(obs.angle) * obs.orbitRadius;
+      const distance = this.p.dist(obsX, obsY, player.pos.x, player.pos.y);
+
+      if (distance < player.radius + obs.size / 2) {
+        console.log('Jogador atingido por obstáculo!');
+        player.takeDamage();
+      }
+    });
   }
 
   draw() {

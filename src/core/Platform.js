@@ -8,6 +8,7 @@ export class Platform {
     this.type = type;
     this.p = p;
     this.img = null; // Apenas para tipos que usam imagens
+    this.isBroken = false; // Indica se a plataforma está quebrada
   }
 
   async preload() {
@@ -32,25 +33,50 @@ export class Platform {
   }
 
   draw() {
+    if (this.isBroken) return; // Não desenha a plataforma se estiver quebrada
+
     const p = this.p;
+
     if (this.type === 'asfalto') {
-      // Desenha o asfalto diretamente com p5.js
+      // Desenha o asfalto padrão
       p.fill(50); // Cor cinza escuro
       p.rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
       p.fill(255, 255, 0); // Faixa amarela
       p.rect(this.x - this.width / 2, this.y - 5, this.width, 5);
-    } else if (this.img) {
-      // Desenha plataformas com imagens
-      p.imageMode(p.CENTER);
-      p.image(this.img, this.x, this.y, this.width, this.height);
-    } else {
-      // Desenha plataformas padrão
-      p.fill(100);
+    } else if (this.type === 'normal') {
+      // Plataforma normal com rachaduras na base
+      p.fill(50); // Cor cinza escuro
       p.rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+      p.fill(255, 255, 0); // Faixa amarela
+      p.rect(this.x - this.width / 2 + 10, this.y - this.height / 2 + 5, this.width - 20, 5); // Faixa amarela no topo
+      p.stroke(30); // Rachaduras na base
+      for (let i = 0; i < 3; i++) {
+        const startX = this.x - this.width / 2 + i * (this.width / 3);
+        const endX = startX + this.width / 6;
+        p.line(startX, this.y + this.height / 2, endX, this.y + this.height / 2 + 10);
+      }
+      p.noStroke();
+    } else if (this.type === 'quebradiça') {
+      // Plataforma quebradiça com uma grande rachadura no meio
+      p.fill(50); // Cor cinza escuro
+      p.rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+      p.fill(255, 255, 0); // Faixa amarela
+      p.rect(this.x - this.width / 2 + 10, this.y - this.height / 2 + 5, this.width - 20, 5); // Faixa amarela no topo
+      p.stroke(80); // Rachadura vermelha no meio
+      p.line(this.x, this.y - this.height / 2, this.x, this.y + this.height / 2);
+      p.noStroke();
+    } else if (this.type === 'móvel') {
+      // Plataforma móvel com partículas de movimento
+      p.fill(50); // Cor cinza escuro
+      p.rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+      p.fill(255, 255, 0); // Faixa amarela
+      p.rect(this.x - this.width / 2 + 10, this.y - this.height / 2 + 5, this.width - 20, 5); // Faixa amarela no topo
     }
   }
 
   isColliding(player) {
+    if (this.isBroken) return false; // Não colide se a plataforma estiver quebrada
+
     const px = player.pos.x;
     const py = player.pos.y + player.radius; // Considera o raio do jogador (parte inferior)
     const top = this.y - this.height / 2; // Topo da plataforma
@@ -60,5 +86,15 @@ export class Platform {
   
     // Verifica se o jogador está dentro dos limites da plataforma
     return px > left && px < right && py > top && py < bottom && player.vy > 0;
+  }
+
+  break() {
+    if (this.type === 'quebradiça' && !this.isBroken) {
+      console.log("Plataforma quebradiça começando a quebrar...");
+      setTimeout(() => {
+        this.isBroken = true; // Marca a plataforma como quebrada após o atraso
+        console.log("Plataforma quebradiça quebrou!");
+      }, 1000); // Atraso de 1 segundo
+    }
   }
 }
