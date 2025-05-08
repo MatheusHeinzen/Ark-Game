@@ -35,10 +35,6 @@ npm install p5
 npm start
 ```
 
-Ou, se preferir, jogue diretamente via GitHub Pages:
-
-👉 Link do jogo no GitHub Pages (em breve)
-
 ## 🧩 Organização do Código
 O código está estruturado em componentes React:
 
