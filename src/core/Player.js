@@ -6,7 +6,7 @@ export class Player {
     this.vx = 0;
     this.vy = 0;
     this.gravity = 0.5;
-    this.jumpForce = -12;
+    this.jumpForce = -13;
     this.isJumping = false;
     this.lives = lives; // Número de vidas
     this.isImmune = false; // Estado de imunidade

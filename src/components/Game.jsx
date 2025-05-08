@@ -17,6 +17,9 @@ export default function Game({ onGameEnd, onGameOver }) {
     bgMusicRef.current = new Audio('/assets/ArkPursuit.mp3');
     bgMusicRef.current.volume = 0.05; // Define o volume para 30% (ajuste conforme necessário)
     bgMusicRef.current.loop = true;
+    if (!startTimeRef.current) {
+      startTimeRef.current = performance.now(); 
+    }
 
     // Inicia a música quando os assets estiverem carregados
     if (assetsLoaded) {
@@ -39,9 +42,9 @@ export default function Game({ onGameEnd, onGameOver }) {
     let lives = 3;
 
     const levelConfigs = {
-      1: { platformCount: 200, obstacleSpeed: 0.3, spacing: 80 },
-      2: { platformCount: 180, obstacleSpeed: 0.5, spacing: 90 },
-      3: { platformCount: 160, obstacleSpeed: 0.8, spacing: 100 },
+      1: { platformCount: 7, obstacleSpeed: 0.3, spacing: 90 },
+      2: { platformCount: 6, obstacleSpeed: 0.5, spacing: 95 },
+      3: { platformCount: 5, obstacleSpeed: 0.9, spacing: 120 },
     };
 
     const loadAssets = async () => {
@@ -65,41 +68,41 @@ export default function Game({ onGameEnd, onGameOver }) {
     const setupLevel = (level) => {
       const config = levelConfigs[level];
       platforms = [];
-    
+
       // Plataforma inicial fixa
       platforms.push(new Platform(400, 780, 0, 800, 40, 'asfalto', p));
-    
+
       // Lista para armazenar plataformas quebradiças que precisam de móveis
       const quebradicasComMoveis = [];
-    
+
       // Primeiro passada: cria todas as plataformas normais e identifica quebradiças
       for (let i = 0; i < config.platformCount; i++) {
-        const x = p.random(100, 700);
+        const x = p.random(80, 500);
         const y = 700 - i * config.spacing;
         const type = i % 3 === 0 ? 'quebradiça' : i % 8 === 0 ? 'móvel' : 'normal';
-        
+
         if (type === 'quebradiça') {
           quebradicasComMoveis.push(y);
         }
-        
+
         platforms.push(new Platform(x, y, type === 'móvel' ? 0.5 : 0, 100, 30, type, p));
       }
-    
+
       // Segunda passada: adiciona plataformas móveis para cada quebradiça
       quebradicasComMoveis.forEach(y => {
         const jaTemMovel = platforms.some(plat => plat.y === y && plat.type === 'móvel');
-        
+
         if (!jaTemMovel) {
           const x = p.random(100, 700);
-          platforms.push(new Platform(x, y, 0.5, 100, 30, 'móvel', p));
+          platforms.push(new Platform(x, y, 0.9, 100, 30, 'móvel', p));
         }
       });
-    
+
       // Configura obstáculos
       orbe.obstacles.forEach((obs) => {
         obs.speed = config.obstacleSpeed;
       });
-    
+
       player = new Player(p, 400, 700, lives);
     };
 
@@ -161,11 +164,13 @@ export default function Game({ onGameEnd, onGameOver }) {
         p.translate(0, cameraOffset);
 
         // Exibe o cronômetro usando o startTimeRef
-        const elapsedTime = Math.floor((p.millis() - startTimeRef.current) / 1000);
+        const elapsedTime = Math.floor((performance.now() - startTimeRef.current) / 1000);
         p.fill(255);
         p.textSize(20);
         p.text(`Tempo: ${elapsedTime}s`, 10, -cameraOffset + 30);
         p.text(`Vidas: ${player.lives}`, p.width - 100, -cameraOffset + 30);
+        p.text(`Level: ${currentLevel}`, p.width - 100, -cameraOffset + 570);
+
 
         orbe.update(player);
         orbe.draw();
@@ -185,7 +190,7 @@ export default function Game({ onGameEnd, onGameOver }) {
         if (p.keyIsDown(p.UP_ARROW)) player.jump();
 
         if (player.touches(orbe)) {
-          const elapsedTime = Math.floor((p.millis() - startTimeRef.current) / 1000);
+          const elapsedTime = Math.floor((performance.now() - startTimeRef.current) / 1000);
           if (currentLevel < 3) {
             transitionToNextLevel();
           } else {
@@ -194,7 +199,7 @@ export default function Game({ onGameEnd, onGameOver }) {
         }
 
         if (player.lives <= 0) {
-          const elapsedTime = Math.floor((p.millis() - startTimeRef.current) / 1000);
+          const elapsedTime = Math.floor((performance.now() - startTimeRef.current) / 1000);
           onGameOver(elapsedTime);
         }
       } catch (error) {
@@ -208,8 +213,19 @@ export default function Game({ onGameEnd, onGameOver }) {
   return (
     <div ref={sketchRef} style={{ width: '100%', height: '100%' }}>
       {transitioning && (
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.8)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '32px' }}>
-          Transição para o próximo nível...
+        <div style={{ position: 'absolute', 
+                      top: 0, 
+                      left: 0, 
+                      width: '100%', 
+                      height: '100%', 
+                      background: 'rgba(0, 0, 0, 0.8)', 
+                      color: 'white', 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      alignItems: 'center', 
+                      fontSize: '32px'
+                      }}>
+
         </div>
       )}
     </div>
