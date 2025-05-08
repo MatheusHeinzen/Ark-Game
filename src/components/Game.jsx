@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useP5Sketch } from '../hooks/useP5Sketch';
 import { Orbe } from '../core/Orbe';
 import { Platform } from '../core/Platform';
@@ -8,7 +8,31 @@ export default function Game({ onGameEnd, onGameOver }) {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [currentLevel, setCurrentLevel] = useState(1);
   const [transitioning, setTransitioning] = useState(false);
-  const startTimeRef = useRef(null); // Usaremos useRef para manter o startTime persistente
+  const startTimeRef = useRef(null);
+  const bgMusicRef = useRef(null); // Referência para o elemento de áudio
+
+  // Efeito para controlar a música de fundo
+  useEffect(() => {
+    // Cria o elemento de áudio
+    bgMusicRef.current = new Audio('/assets/ArkPursuit.mp3');
+    bgMusicRef.current.volume = 0.05; // Define o volume para 30% (ajuste conforme necessário)
+    bgMusicRef.current.loop = true;
+
+    // Inicia a música quando os assets estiverem carregados
+    if (assetsLoaded) {
+      bgMusicRef.current.play().catch(error => {
+        console.error("Erro ao reproduzir música:", error);
+      });
+    }
+
+    // Limpeza ao desmontar o componente
+    return () => {
+      if (bgMusicRef.current) {
+        bgMusicRef.current.pause();
+        bgMusicRef.current.currentTime = 0;
+      }
+    };
+  }, [assetsLoaded]);
 
   const sketch = useCallback((p) => {
     let orbe, platforms, player, bgImage;
@@ -52,7 +76,7 @@ export default function Game({ onGameEnd, onGameOver }) {
       for (let i = 0; i < config.platformCount; i++) {
         const x = p.random(100, 700);
         const y = 700 - i * config.spacing;
-        const type = i % 3 === 0 ? 'quebradiça' : i % 5 === 0 ? 'móvel' : 'normal';
+        const type = i % 3 === 0 ? 'quebradiça' : i % 8 === 0 ? 'móvel' : 'normal';
         
         if (type === 'quebradiça') {
           quebradicasComMoveis.push(y);
@@ -97,12 +121,12 @@ export default function Game({ onGameEnd, onGameOver }) {
       }
 
       p.createCanvas(800, 600);
-      // Só define o startTime na primeira vez
       if (!startTimeRef.current) {
         startTimeRef.current = p.millis();
       }
       console.log("Assets carregados com sucesso.");
     };
+
 
     p.draw = () => {
       if (!assetsLoaded || !orbe || !platforms || !player || !startTimeRef.current) return;
