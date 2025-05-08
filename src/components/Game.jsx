@@ -5,7 +5,7 @@ import { Platform } from '../core/Platform';
 import { Player } from '../core/Player';
 
 export default function Game({ onGameEnd }) {
-  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [assetsLoaded, setAssetsLoaded] = useState(false); 
 
   const sketch = useCallback((p) => {
     let orbe, platforms, player, bgImage;
@@ -27,7 +27,7 @@ export default function Game({ onGameEnd }) {
         // Adiciona a plataforma inicial fixa (asfalto seguro)
         platforms.push(new Platform(400, 780, 0, 800, 40, 'asfalto', p)); // Plataforma fixa no chão
 
-        const platformCount = 55; // Número de plataformas adicionais
+        const platformCount = 80; // Número de plataformas adicionais
         for (let i = 0; i < platformCount; i++) {
           const x = p.random(100, 700); // Posição horizontal aleatória
           const y = 700 - i * 80; // Posição vertical ajustada (subindo mais suavemente)
@@ -37,7 +37,7 @@ export default function Game({ onGameEnd }) {
 
         console.log("Plataformas configuradas.");
 
-        player = new Player(p, 400, 550, lives); // Jogador começa no centro inferior
+        player = new Player(p, 400, 700, lives); // Jogador começa no centro inferior
         console.log("Jogador inicializado.");
 
         setAssetsLoaded(true);
@@ -71,9 +71,10 @@ export default function Game({ onGameEnd }) {
 
         // Desenha o fundo ajustado ao deslocamento da câmera
         if (bgImage) {
-          for (let y = cameraOffset; y < cameraOffset + p.height; y += bgImage.height) {
-            p.image(bgImage, 0, y, p.width, bgImage.height);
-          }
+          p.push();
+          p.tint(255, 150);
+          p.image(bgImage, -9, cameraOffset+220, p.width, p.height);
+          p.pop();
         }
 
         // Aplica o deslocamento da câmera
