@@ -1,6 +1,6 @@
 export class Player {
   constructor(p, x, y, lives) {
-    this.p = p; // Armazena a instância do p5
+    this.p = p; // Instância do p5
     this.pos = p.createVector(x, y);
     this.radius = 20;
     this.vx = 0;
@@ -8,7 +8,8 @@ export class Player {
     this.gravity = 0.5;
     this.jumpForce = -12;
     this.isJumping = false;
-    this.lives = lives; // Armazena o número de vidas
+    this.lives = lives; // Número de vidas
+    this.isImmune = false; // Estado de imunidade
   }
 
   update(platforms, orbePosition) {
@@ -46,6 +47,9 @@ export class Player {
   }
 
   draw() {
+    // Indica visualmente a imunidade (pisca)
+    if (this.isImmune && this.p.frameCount % 10 < 5) return;
+
     this.drawPlayer(this.pos.x, this.pos.y);
   }
 
@@ -141,11 +145,19 @@ export class Player {
   }
 
   takeDamage() {
+    if (this.isImmune) return; // Ignora dano se estiver imune
+
     console.log('O jogador foi atingido!');
-    this.lives--; // Reduz a propriedade 'lives' da instância do jogador
+    this.lives--; // Reduz a vida do jogador
+
     if (this.lives <= 0) {
       console.log('Game Over!');
-      this.p.noLoop(); // Para o jogo
+    } else {
+      this.isImmune = true; // Ativa imunidade
+      setTimeout(() => {
+        this.isImmune = false; // Remove imunidade após 1 segundo
+        console.log('Imunidade acabou.');
+      }, 1000); // 1 segundo de imunidade
     }
   }
 

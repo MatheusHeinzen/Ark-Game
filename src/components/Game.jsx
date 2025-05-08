@@ -4,13 +4,13 @@ import { Orbe } from '../core/Orbe';
 import { Platform } from '../core/Platform';
 import { Player } from '../core/Player';
 
-export default function Game({ onGameEnd }) {
+export default function Game({ onGameEnd, onGameOver }) {
   const [assetsLoaded, setAssetsLoaded] = useState(false); 
 
   const sketch = useCallback((p) => {
     let orbe, platforms, player, bgImage;
     let startTime;
-    let lives = 50; // Número inicial de vidas
+    let lives = 3; // Número inicial de vidas
 
     const loadAssets = async () => {
       try {
@@ -61,53 +61,57 @@ export default function Game({ onGameEnd }) {
     };
     
     p.draw = () => {
-      if (!assetsLoaded || !orbe || !platforms || !player) return; // Garante que os assets estão carregados
-
+      if (!assetsLoaded || !orbe || !platforms || !player) return;
+    
       try {
         p.background(20);
-
+    
         // Calcula o deslocamento da câmera
         let cameraOffset = Math.min(0, p.height / 2 - player.pos.y);
-
+    
         // Desenha o fundo ajustado ao deslocamento da câmera
         if (bgImage) {
           p.push();
           p.tint(255, 150);
-          p.image(bgImage, -9, cameraOffset+220, p.width, p.height);
+          p.image(bgImage, -9, cameraOffset + 220, p.width, p.height);
           p.pop();
         }
-
+    
         // Aplica o deslocamento da câmera
         p.push();
         p.translate(0, cameraOffset);
-
+    
         // Exibe o cronômetro
-        const elapsedTime = Math.floor((p.millis() - startTime) / 1000); // Tempo em segundos
+        const elapsedTime = Math.floor((p.millis() - startTime) / 1000);
         p.fill(255);
         p.textSize(20);
-        p.text(`Tempo: ${elapsedTime}s`, 10, -cameraOffset + 30); // Ajusta a posição do texto com base no deslocamento
+        p.text(`Tempo: ${elapsedTime}s`, 10, -cameraOffset + 30);
         p.text(`Vidas: ${player.lives}`, p.width - 100, -cameraOffset + 30);
-
+    
         orbe.update(player);
         orbe.draw();
-
+    
         platforms.forEach((platform) => {
           platform.update(orbe.getPosition());
           platform.draw();
         });
-
+    
         player.update(platforms, orbe.getPosition());
         player.draw();
-
-        p.pop(); // Restaura o estado do canvas
-
+    
+        p.pop();
+    
         if (p.keyIsDown(p.LEFT_ARROW)) player.moveLeft();
         if (p.keyIsDown(p.RIGHT_ARROW)) player.moveRight();
         if (p.keyIsDown(p.UP_ARROW)) player.jump();
-
+    
         if (player.touches(orbe)) {
           console.log("Jogador alcançou a órbita");
           onGameEnd();
+        }
+    
+        if (player.lives <= 0) {
+          onGameOver(); // Chama a tela de game over
         }
       } catch (error) {
         console.error('Erro no draw:', error);
@@ -118,7 +122,7 @@ export default function Game({ onGameEnd }) {
     p.keyPressed = () => {
       if (p.key === ' ') player.jump();
     };
-  }, [assetsLoaded, onGameEnd]);
+  }, [assetsLoaded, onGameEnd, onGameOver]);
 
   const sketchRef = useP5Sketch(sketch);
 
