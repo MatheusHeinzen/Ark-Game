@@ -5,12 +5,20 @@ import { Platform } from '../core/Platform';
 import { Player } from '../core/Player';
 
 export default function Game({ onGameEnd, onGameOver }) {
-  const [assetsLoaded, setAssetsLoaded] = useState(false); 
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [currentLevel, setCurrentLevel] = useState(1); // Nível atual
+  const [transitioning, setTransitioning] = useState(false); // Estado de transição
 
   const sketch = useCallback((p) => {
     let orbe, platforms, player, bgImage;
     let startTime;
-    let lives = 3; // Número inicial de vidas
+    let lives = 3;
+
+    const levelConfigs = {
+      1: { platformCount: 200, obstacleSpeed: 0.3, spacing: 80 },
+      2: { platformCount: 180, obstacleSpeed: 0.5, spacing: 90 },
+      3: { platformCount: 160, obstacleSpeed: 0.8, spacing: 100 },
+    };
 
     const loadAssets = async () => {
       try {
@@ -22,24 +30,7 @@ export default function Game({ onGameEnd, onGameOver }) {
         await orbe.setupObstacles();
         console.log("Órbita configurada.");
 
-        platforms = [];
-
-        // Adiciona a plataforma inicial fixa (asfalto seguro)
-        platforms.push(new Platform(400, 780, 0, 800, 40, 'asfalto', p)); // Plataforma fixa no chão
-
-        const platformCount = 80; // Número de plataformas adicionais
-        for (let i = 0; i < platformCount; i++) {
-          const x = p.random(100, 700); // Posição horizontal aleatória
-          const y = 700 - i * 80; // Posição vertical ajustada (subindo mais suavemente)
-          const type = i % 3 === 0 ? 'quebradiça' : i % 5 === 0 ? 'móvel' : 'normal'; // Alterna os tipos
-          platforms.push(new Platform(x, y, type === 'móvel' ? 0.5 : 0, 100, 30, type, p));
-        }
-
-        console.log("Plataformas configuradas.");
-
-        player = new Player(p, 400, 700, lives); // Jogador começa no centro inferior
-        console.log("Jogador inicializado.");
-
+        setupLevel(currentLevel);
         setAssetsLoaded(true);
         console.log("Todos os assets foram carregados.");
       } catch (error) {
@@ -47,28 +38,91 @@ export default function Game({ onGameEnd, onGameOver }) {
       }
     };
 
+    const setupLevel = (level) => {
+      const config = levelConfigs[level];
+      platforms = [];
+    
+      // Plataforma inicial fixa
+      platforms.push(new Platform(400, 780, 0, 800, 40, 'asfalto', p));
+    
+      // Lista para armazenar plataformas quebradiças que precisam de móveis
+      const quebradicasComMoveis = [];
+    
+      // Primeiro passada: cria todas as plataformas normais e identifica quebradiças
+      for (let i = 0; i < config.platformCount; i++) {
+        const x = p.random(100, 700);
+        const y = 700 - i * config.spacing;
+        const type = i % 3 === 0 ? 'quebradiça' : i % 5 === 0 ? 'móvel' : 'normal';
+        
+        if (type === 'quebradiça') {
+          // Guarda a posição y para adicionar uma móvel depois
+          quebradicasComMoveis.push(y);
+        }
+        
+        platforms.push(new Platform(x, y, type === 'móvel' ? 0.5 : 0, 100, 30, type, p));
+      }
+    
+      // Segunda passada: adiciona plataformas móveis para cada quebradiça
+      quebradicasComMoveis.forEach(y => {
+        // Verifica se já não existe uma móvel nesta altura
+        const jaTemMovel = platforms.some(plat => plat.y === y && plat.type === 'móvel');
+        
+        if (!jaTemMovel) {
+          const x = p.random(100, 700);
+          platforms.push(new Platform(x, y, 0.5, 100, 30, 'móvel', p));
+        }
+      });
+    
+      // Configura obstáculos
+      orbe.obstacles.forEach((obs) => {
+        obs.speed = config.obstacleSpeed;
+      });
+    
+      player = new Player(p, 400, 700, lives);
+    };
+
+    const transitionToNextLevel = () => {
+      setTransitioning(true);
+      setTimeout(() => {
+        setTransitioning(false);
+        setCurrentLevel((prev) => prev + 1);
+        setupLevel(currentLevel + 1);
+      }, 2000); // 2 segundos de transição
+    };
+
     p.setup = async () => {
       console.log("Carregando assets...");
-      await loadAssets(); // Aguarda o carregamento dos assets
+      await loadAssets();
       if (!assetsLoaded) {
         console.error("Erro: Assets não foram carregados corretamente.");
         return;
       }
-    
-      p.createCanvas(800, 600); // Cria o canvas após carregar os assets
-      startTime = p.millis(); // Marca o início do jogo
+
+      p.createCanvas(800, 600);
+      startTime = p.millis();
       console.log("Assets carregados com sucesso.");
     };
-    
+
     p.draw = () => {
       if (!assetsLoaded || !orbe || !platforms || !player) return;
-    
+
       try {
         p.background(20);
-    
+
+        // Transição de nível
+        if (transitioning) {
+          p.fill(0, 150);
+          p.rect(0, 0, p.width, p.height);
+          p.fill(255);
+          p.textSize(32);
+          p.textAlign(p.CENTER, p.CENTER);
+          p.text(`Nível ${currentLevel + 1}`, p.width / 2, p.height / 2);
+          return;
+        }
+
         // Calcula o deslocamento da câmera
         let cameraOffset = Math.min(0, p.height / 2 - player.pos.y);
-    
+
         // Desenha o fundo ajustado ao deslocamento da câmera
         if (bgImage) {
           p.push();
@@ -76,55 +130,63 @@ export default function Game({ onGameEnd, onGameOver }) {
           p.image(bgImage, -9, cameraOffset + 220, p.width, p.height);
           p.pop();
         }
-    
+
         // Aplica o deslocamento da câmera
         p.push();
         p.translate(0, cameraOffset);
-    
+
         // Exibe o cronômetro
         const elapsedTime = Math.floor((p.millis() - startTime) / 1000);
         p.fill(255);
         p.textSize(20);
         p.text(`Tempo: ${elapsedTime}s`, 10, -cameraOffset + 30);
         p.text(`Vidas: ${player.lives}`, p.width - 100, -cameraOffset + 30);
-    
+
         orbe.update(player);
         orbe.draw();
-    
+
         platforms.forEach((platform) => {
           platform.update(orbe.getPosition());
           platform.draw();
         });
-    
+
         player.update(platforms, orbe.getPosition());
         player.draw();
-    
+
         p.pop();
-    
+
         if (p.keyIsDown(p.LEFT_ARROW)) player.moveLeft();
         if (p.keyIsDown(p.RIGHT_ARROW)) player.moveRight();
         if (p.keyIsDown(p.UP_ARROW)) player.jump();
-    
+
         if (player.touches(orbe)) {
-          console.log("Jogador alcançou a órbita");
-          onGameEnd();
+          if (currentLevel < 3) {
+            transitionToNextLevel();
+          } else {
+            console.log("Jogador estabilizou a órbita!");
+            onGameEnd();
+          }
         }
-    
+
         if (player.lives <= 0) {
-          onGameOver(); // Chama a tela de game over
+          console.log("Game Over!");
+          onGameOver();
         }
       } catch (error) {
         console.error('Erro no draw:', error);
       }
     };
-    
-
-    p.keyPressed = () => {
-      if (p.key === ' ') player.jump();
-    };
-  }, [assetsLoaded, onGameEnd, onGameOver]);
+  }, [assetsLoaded, currentLevel, transitioning, onGameEnd, onGameOver]);
 
   const sketchRef = useP5Sketch(sketch);
 
-  return <div ref={sketchRef} style={{ width: '100%', height: '100%' }} />;
+  return (
+    <div ref={sketchRef} style={{ width: '100%', height: '100%' }}>
+      {transitioning && (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.8)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '32px' }}>
+          Transição para o próximo nível...
+        </div>
+      )}
+    </div>
+  );
 }

@@ -34,7 +34,7 @@ export class Orbe {
     }
   
     // Configura os obstáculos
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 8; i++) {
       this.obstacles.push({
         img: this.p.random(this.obstacleImgs),
         orbitRadius: this.p.random(200, 300),
