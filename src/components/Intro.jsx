@@ -26,8 +26,8 @@ export default function Intro({ onFinish }) {
         timer++;
 
         if (timer > 400) {
-          p.remove(); // remove p5 instance
-          onFinish(); // inicia o jogo
+          p.remove();
+          onFinish();
         }
       };
     };

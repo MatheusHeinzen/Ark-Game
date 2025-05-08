@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useP5Sketch } from '../hooks/useP5Sketch';
 import { Orbe } from '../core/Orbe';
 import { Platform } from '../core/Platform';
@@ -6,12 +6,12 @@ import { Player } from '../core/Player';
 
 export default function Game({ onGameEnd, onGameOver }) {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
-  const [currentLevel, setCurrentLevel] = useState(1); // Nível atual
-  const [transitioning, setTransitioning] = useState(false); // Estado de transição
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [transitioning, setTransitioning] = useState(false);
+  const startTimeRef = useRef(null); // Usaremos useRef para manter o startTime persistente
 
   const sketch = useCallback((p) => {
     let orbe, platforms, player, bgImage;
-    let startTime;
     let lives = 3;
 
     const levelConfigs = {
@@ -55,7 +55,6 @@ export default function Game({ onGameEnd, onGameOver }) {
         const type = i % 3 === 0 ? 'quebradiça' : i % 5 === 0 ? 'móvel' : 'normal';
         
         if (type === 'quebradiça') {
-          // Guarda a posição y para adicionar uma móvel depois
           quebradicasComMoveis.push(y);
         }
         
@@ -64,7 +63,6 @@ export default function Game({ onGameEnd, onGameOver }) {
     
       // Segunda passada: adiciona plataformas móveis para cada quebradiça
       quebradicasComMoveis.forEach(y => {
-        // Verifica se já não existe uma móvel nesta altura
         const jaTemMovel = platforms.some(plat => plat.y === y && plat.type === 'móvel');
         
         if (!jaTemMovel) {
@@ -87,7 +85,7 @@ export default function Game({ onGameEnd, onGameOver }) {
         setTransitioning(false);
         setCurrentLevel((prev) => prev + 1);
         setupLevel(currentLevel + 1);
-      }, 2000); // 2 segundos de transição
+      }, 2000);
     };
 
     p.setup = async () => {
@@ -99,12 +97,15 @@ export default function Game({ onGameEnd, onGameOver }) {
       }
 
       p.createCanvas(800, 600);
-      startTime = p.millis();
+      // Só define o startTime na primeira vez
+      if (!startTimeRef.current) {
+        startTimeRef.current = p.millis();
+      }
       console.log("Assets carregados com sucesso.");
     };
 
     p.draw = () => {
-      if (!assetsLoaded || !orbe || !platforms || !player) return;
+      if (!assetsLoaded || !orbe || !platforms || !player || !startTimeRef.current) return;
 
       try {
         p.background(20);
@@ -135,8 +136,8 @@ export default function Game({ onGameEnd, onGameOver }) {
         p.push();
         p.translate(0, cameraOffset);
 
-        // Exibe o cronômetro
-        const elapsedTime = Math.floor((p.millis() - startTime) / 1000);
+        // Exibe o cronômetro usando o startTimeRef
+        const elapsedTime = Math.floor((p.millis() - startTimeRef.current) / 1000);
         p.fill(255);
         p.textSize(20);
         p.text(`Tempo: ${elapsedTime}s`, 10, -cameraOffset + 30);
@@ -160,17 +161,17 @@ export default function Game({ onGameEnd, onGameOver }) {
         if (p.keyIsDown(p.UP_ARROW)) player.jump();
 
         if (player.touches(orbe)) {
+          const elapsedTime = Math.floor((p.millis() - startTimeRef.current) / 1000);
           if (currentLevel < 3) {
             transitionToNextLevel();
           } else {
-            console.log("Jogador estabilizou a órbita!");
-            onGameEnd();
+            onGameEnd(elapsedTime);
           }
         }
 
         if (player.lives <= 0) {
-          console.log("Game Over!");
-          onGameOver();
+          const elapsedTime = Math.floor((p.millis() - startTimeRef.current) / 1000);
+          onGameOver(elapsedTime);
         }
       } catch (error) {
         console.error('Erro no draw:', error);
